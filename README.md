@@ -15,8 +15,18 @@ bumping the version rather than editing every app.
 
 ## Install
 
-\
-\
+```jsonc
+// package.json — pin a tag, never a moving branch
+"dependencies": {
+  "@stri/auth": "github:STRI-Research/stri-auth#v1.0.0"
+}
+```
+
+```ts
+// next.config.ts — the package ships TS source; Next transpiles it
+const nextConfig = { transpilePackages: ["@stri/auth"] };
+```
+
 ## Wire up (three shim files Next.js requires at fixed paths)
 
 ```ts
