@@ -1,0 +1,21 @@
+{
+  "name": "@stri/auth",
+  "version": "1.0.0",
+  "description": "STRI Suite auth for consuming apps: middleware gate, token callback, sign-out, and getUser().",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./middleware": "./src/middleware.ts",
+    "./callback": "./src/callback.ts",
+    "./signout": "./src/signout.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "jose": "^6"
+  },
+  "peerDependencies": {
+    "next": ">=14"
+  }
+}
