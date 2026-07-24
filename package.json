@@ -1,5 +1,5 @@
 {
-  "name": "@stri/auth",
+  "name": "@stri-research/auth",
   "version": "1.0.0",
   "description": "STRI Suite auth for consuming apps: middleware gate, token callback, sign-out, and getUser().",
   "type": "module",
@@ -17,5 +17,12 @@
   },
   "peerDependencies": {
     "next": ">=14"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/STRI-Research/stri-auth.git"
   }
 }

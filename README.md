@@ -1,4 +1,4 @@
-# @stri/auth
+# @stri-research/auth
 
 STRI Suite authentication for consuming apps. Replaces the copy-pasted
 `templates/stri-auth` files with a single updatable dependency: fixes ship by
@@ -8,31 +8,37 @@ bumping the version rather than editing every app.
 
 | Import | Use |
 |---|---|
-| `@stri/auth` → `getUser()` | the signed-in user (server components / route handlers / actions) |
-| `@stri/auth/middleware` → `middleware`, `defaultConfig` | the auth gate |
-| `@stri/auth/callback` → `GET` | token-to-cookie exchange |
-| `@stri/auth/signout` → `GET`, `POST` | sign out of app **and** Suite |
+| `@stri-research/auth` → `getUser()` | the signed-in user (server components / route handlers / actions) |
+| `@stri-research/auth/middleware` → `middleware`, `defaultConfig` | the auth gate |
+| `@stri-research/auth/callback` → `GET` | token-to-cookie exchange |
+| `@stri-research/auth/signout` → `GET`, `POST` | sign out of app **and** Suite |
 
 ## Install
 
-```jsonc
-// package.json — pin a tag, never a moving branch
-"dependencies": {
-  "@stri/auth": "github:STRI-Research/stri-auth#v1.0.0"
-}
 ```
+// .npmrc (committed — no secret, just a variable reference)
+@stri-research:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NPM_GITHUB_TOKEN}
+```
+
+```jsonc
+// package.json
+"dependencies": { "@stri-research/auth": "^1.0.0" }
+```
+
+Set `NPM_GITHUB_TOKEN` (a read:packages token) as a team-shared Vercel env var — once for all projects.
 
 ```ts
 // next.config.ts — the package ships TS source; Next transpiles it
-const nextConfig = { transpilePackages: ["@stri/auth"] };
+const nextConfig = { transpilePackages: ["@stri-research/auth"] };
 ```
 
 ## Wire up (three shim files Next.js requires at fixed paths)
 
 ```ts
 // src/middleware.ts
-export { middleware } from "@stri/auth/middleware";
-export { defaultConfig as config } from "@stri/auth/middleware";
+export { middleware } from "@stri-research/auth/middleware";
+export { defaultConfig as config } from "@stri-research/auth/middleware";
 ```
 
 If the app has routes that must stay public (mobile, cron, webhooks), define
@@ -40,7 +46,7 @@ your own `config` instead of re-exporting `defaultConfig`:
 
 ```ts
 // src/middleware.ts (app with public routes)
-export { middleware } from "@stri/auth/middleware";
+export { middleware } from "@stri-research/auth/middleware";
 export const config = {
   matcher: [
     "/((?!api/auth|m/|api/cron|_next|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
@@ -50,12 +56,12 @@ export const config = {
 
 ```ts
 // src/app/api/auth/callback/route.ts
-export { GET } from "@stri/auth/callback";
+export { GET } from "@stri-research/auth/callback";
 ```
 
 ```ts
 // src/app/api/auth/signout/route.ts
-export { GET, POST } from "@stri/auth/signout";
+export { GET, POST } from "@stri-research/auth/signout";
 ```
 
 ## Env vars (set on the Vercel project)
@@ -73,6 +79,6 @@ in a normal PR — a bad release can't reach an app until its ref is bumped.
 
 ## Releasing a new version
 
-1. Edit `src/`, bump `version` in `package.json`.
-2. Tag: `git tag v1.1.0 && git push origin v1.1.0`.
-3. Apps adopt by pointing their dependency at the new tag.
+1. Edit `src/`, bump `version`.
+2. `npm publish` (needs a write:packages token; see repo settings).
+3. Apps adopt via `npm update @stri-research/auth` or a version bump.
