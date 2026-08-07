@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(destination);
+  // The inbound URL carries the token as a query param; keep it out of the
+  // Referer sent to the destination page.
+  response.headers.set("Referrer-Policy", "no-referrer");
   response.cookies.set(config.cookieName, token, {
     httpOnly: true,
     secure: true,
