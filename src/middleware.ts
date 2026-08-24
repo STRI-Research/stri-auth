@@ -1,26 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyToken, config } from "./core";
+import { unauthorizedResponse } from "./http";
 
 function redirectToSuite(request: NextRequest): NextResponse {
   const loginUrl = new URL("/api/auth/app-login", config.suiteUrl());
   loginUrl.searchParams.set("app", config.appName());
   loginUrl.searchParams.set("returnUrl", request.url);
   return NextResponse.redirect(loginUrl.toString());
-}
-
-/**
- * Data routes must fail with a status code, never a redirect. fetch() follows
- * redirects transparently, so redirecting an expired XHR to Suite either costs a
- * multi-hop round trip per call or returns the sign-in HTML, which the caller
- * then parses as JSON — hanging the UI on a loading state forever.
- */
-function unauthorized(): NextResponse {
-  const response = NextResponse.json(
-    { error: "Unauthorized", reason: "stri-session missing or expired" },
-    { status: 401 }
-  );
-  response.cookies.delete(config.cookieName);
-  return response;
 }
 
 function isDataRequest(request: NextRequest): boolean {
@@ -46,7 +32,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const reject = () =>
-    isDataRequest(request) ? unauthorized() : redirectToSuite(request);
+    isDataRequest(request) ? unauthorizedResponse() : redirectToSuite(request);
 
   const session = request.cookies.get(config.cookieName);
   if (!session?.value) return reject();
