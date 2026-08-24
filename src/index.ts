@@ -21,3 +21,13 @@ export async function getUser(): Promise<StriUser | null> {
   const payload = await verifyToken(session.value);
   return payload ? payloadToUser(payload) : null;
 }
+
+export {
+  requireCaller,
+  requireRole,
+  withCaller,
+  UnauthorizedError,
+  ForbiddenError,
+  unauthorizedResponse,
+  forbiddenResponse,
+} from "./caller";
