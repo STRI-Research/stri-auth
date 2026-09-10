@@ -63,3 +63,22 @@ export const config = {
   sessionMaxAge: 60 * 60,
   cookieName: "stri-session",
 };
+
+/**
+ * Verify a Suite-issued session token WITHOUT the `app` claim check.
+ *
+ * Used for delegation: a sibling app forwards the signed-in person's session
+ * token in `X-STRI-Actor`. That token was minted for the *calling* app, so its
+ * `app` claim will not match this one; what matters is that the Suite signed
+ * it and it has not expired. Never use this for this app's own session cookie.
+ */
+export async function verifyActorToken(token: string): Promise<JWTPayload | null> {
+  try {
+    const key = await getPublicKey();
+    const { payload } = await jwtVerify(token, key);
+    if (typeof payload.sub !== "string" || !payload.sub) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}

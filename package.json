@@ -1,13 +1,15 @@
 {
   "name": "@stri/auth",
-  "version": "1.0.0",
-  "description": "STRI Suite auth for consuming apps: middleware gate, token callback, sign-out, and getUser().",
+  "version": "1.1.0",
+  "description": "STRI Suite auth for consuming apps: middleware gate, token callback, sign-out, getUser(), and the app-to-app API key module (mint, verify, admin handlers).",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./middleware": "./src/middleware.ts",
     "./callback": "./src/callback.ts",
-    "./signout": "./src/signout.ts"
+    "./signout": "./src/signout.ts",
+    "./api": "./src/api.ts",
+    "./api/admin": "./src/api-admin.ts"
   },
   "files": [
     "src"
@@ -21,5 +23,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/STRI-Research/stri-auth.git"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3",
+    "typescript": "^5",
+    "@types/node": "^22",
+    "next": "^15"
   }
 }
