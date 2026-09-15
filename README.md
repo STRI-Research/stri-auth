@@ -123,3 +123,75 @@ integration registry; without it they still succeed.
 
 **Remember to exclude `/api/v1` from the session middleware matcher** — these
 routes authenticate themselves and must never redirect to the Suite.
+
+---
+
+## The STRI app rules (`RULES.md`) — v1.2
+
+[`RULES.md`](./RULES.md) is the canonical ruleset for every app in the estate:
+five shape rules, eleven non-negotiables, and a complexity ceiling calibrated
+against Machine Tracker, the reference implementation.
+
+It lives here, in the one package every app already depends on, so there is a
+single versioned copy and no app can hold a private variant. Pick up changes
+with `npm update @stri/auth`.
+
+### Checking an app
+
+```bash
+npx stri-conform             # the current directory
+npx stri-conform ../some-app
+npx stri-conform --json      # for CI
+npx stri-conform --verbose   # show the checks that passed too
+npx stri-conform --rules     # print RULES.md
+```
+
+Exits non-zero when a `must` rule fails. Tripwires (tables, source size, section
+count) are reported but do not fail the run — crossing one means justify it in
+`PROJECT.md` or split the app, which is a judgement for a person.
+
+**What it can and cannot do.** It checks the mechanically checkable: files
+present, middleware wired and its exclusions justified, the five platform
+endpoints, the `api_key` table's shape, no pre-auth `vercel` branch, no secret
+in git, no DDL on boot, and the ceilings. It cannot check that an app has one
+*purpose*, that a DTO omits the right column, or that a scope went to the right
+consumer. A green run means nothing obvious is wrong, not that the app is well
+designed.
+
+### The authz lint rule
+
+The rule with the most scar tissue behind it (S4) is enforced by eslint rather
+than by the checker, because it has to work per handler. The failure it catches
+that nothing else does:
+
+```ts
+const caller = await requireApiCaller();
+if (isResponse(caller)) return caller;   // caller IS read, once
+// ...and never again — nothing is authorized, and no-unused-vars is happy
+```
+
+Wire it up once per app:
+
+```js
+// eslint.config.mjs
+import authz from "@stri/auth/eslint/authz-in-route-handlers.mjs";
+
+export default [
+  {
+    files: ["src/app/api/**/route.ts"],
+    plugins: { stri: { rules: { "authz-in-route-handlers": authz } } },
+    rules: {
+      "stri/authz-in-route-handlers": ["error", {
+        // Extend the shared defaults with this app's own spellings.
+        callerResolvers: ["requireApiCaller", "getStriCaller"],
+        authzChecks: ["has(", "canEditJob("],
+        allowUnauthenticated: ["/api/cron/", "/api/v1/health/", "/api/v1/openapi.json/"],
+      }],
+    },
+  },
+];
+```
+
+`stri-conform` requires the rule to be wired in; it does not try to re-implement
+it. Originally written for the Planner (`feat/authz-lint-rule`, Aug 2026) and
+generalised here.
