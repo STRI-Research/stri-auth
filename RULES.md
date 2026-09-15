@@ -195,6 +195,24 @@ file is status that is already wrong.
 
 ---
 
+### One exemption: the auth broker
+
+The STRI Suite issues the sessions every other app verifies, so it cannot depend
+on `@stri/auth` or carry the three consumer shims — requiring it to would be
+requiring it to authenticate against itself. It declares this in its
+package.json:
+
+```json
+"striConform": { "role": "broker" }
+```
+
+That exempts exactly three checks (the `@stri/auth` dependency, the middleware's
+use of the package, and the callback and sign-out shims). **Every other rule
+still applies to the Suite**, including the API surface — it holds the estate's
+integration registry and its own alert keys, so it needs `/api/v1` and an
+`api_key` table as much as anything else does. There is no second exemption, and
+adding one is a change to this document, not to an app.
+
 ## Part 3 — The complexity ceiling
 
 Sam's framing: *the most complicated app should not get more complex than

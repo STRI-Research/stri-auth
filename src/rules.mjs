@@ -194,6 +194,23 @@ export const ALLOWED_MIDDLEWARE_EXCLUSIONS = [
 ];
 
 /**
+ * An app's role in the estate, declared as `striConform: { role }` in its
+ * package.json. Defaults to "consumer".
+ *
+ *   consumer — every app but one. Sits behind Suite auth via @stri/auth.
+ *   broker   — the STRI Suite itself. It *issues* the sessions every other app
+ *              verifies, so it cannot depend on @stri/auth or carry the three
+ *              consumer shims; requiring it to would be requiring it to
+ *              authenticate against itself. Every other rule still applies,
+ *              including the API surface: the Suite holds the estate's
+ *              integration registry and its own alert keys.
+ */
+export const APP_ROLES = ["consumer", "broker"];
+
+/** Checks that only make sense for an app that consumes Suite auth. */
+export const CONSUMER_ONLY_RULES = ["S4:middleware-package", "S4:shims", "S4:dependency"];
+
+/**
  * The files every conforming app has. Checked by `stri-conform`; the prose
  * version is RULES.md Part 4.
  */

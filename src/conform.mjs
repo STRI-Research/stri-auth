@@ -27,6 +27,7 @@ import {
   CEILINGS,
   REQUIRED_FILES,
   REQUIRED_V1_ROUTES,
+  APP_ROLES,
   RULES_VERSION,
   RULE_BY_ID,
 } from "./rules.mjs";
@@ -142,7 +143,7 @@ function checkFrontEnd(root, files) {
 }
 
 /** S4 + N4 — middleware wired, and its exclusions a justified closed set. */
-function checkMiddleware(root, files) {
+function checkMiddleware(root, files, role = "consumer") {
   const mw = files.find((f) => /(^|\/)(src\/)?middleware\.(ts|js)$/.test(rel(root, f)));
   if (!mw) {
     return [{ rule: "S4", status: "fail", message: "No middleware.ts — the app is not behind Suite auth" }];
@@ -151,7 +152,13 @@ function checkMiddleware(root, files) {
   const where = [rel(root, mw)];
   const out = [];
 
-  if (!src.includes("@stri/auth/middleware")) {
+  if (role === "broker") {
+    out.push({
+      rule: "S4", status: "skip",
+      message: "auth broker — issues sessions rather than verifying them, so @stri/auth/middleware does not apply",
+      where,
+    });
+  } else if (!src.includes("@stri/auth/middleware")) {
     out.push({ rule: "S4", status: "fail", message: "middleware does not use @stri/auth/middleware", where });
   }
 
@@ -411,7 +418,7 @@ function checkKeyStorage(root, files) {
 }
 
 /** N5 + N7 — no pre-auth branch; @stri/auth pinned. */
-function checkDeploy(root) {
+function checkDeploy(root, role = "consumer") {
   const out = [];
   const branches = git(root, ["branch", "-r"]);
   if (branches == null) {
@@ -428,7 +435,9 @@ function checkDeploy(root) {
   if (existsSync(join(root, "package.json"))) {
     try {
       const dep = JSON.parse(read(join(root, "package.json"))).dependencies?.["@stri/auth"] ?? "";
-      if (!dep) {
+      if (role === "broker") {
+        out.push({ rule: "S4", status: "skip", message: "auth broker — does not depend on @stri/auth" });
+      } else if (!dep) {
         out.push({ rule: "S4", status: "fail", message: "@stri/auth is not a dependency" });
       } else if (!/#v\d+\.\d+\.\d+/.test(dep)) {
         out.push({ rule: "S4", status: "warn", message: `@stri/auth is not pinned to a version tag ("${dep}")` });
@@ -535,9 +544,20 @@ function checkCeilings(root, files) {
 }
 
 /** Part 4 — the required files. */
-function checkRequiredFiles(root) {
+function checkRequiredFiles(root, role = "consumer") {
   const out = [];
   for (const req of REQUIRED_FILES) {
+    // The consumer shims exist to verify a Suite session; the broker mints
+    // them, so it has neither — and its own middleware gates on its own
+    // session code rather than on @stri/auth.
+    const consumerAuthFile = (req.contains ?? []).some((c) => c.startsWith("@stri/auth/"));
+    if (role === "broker" && consumerAuthFile) {
+      out.push({
+        rule: req.rule, status: "skip",
+        message: `${req.what} — not applicable to the auth broker`,
+      });
+      continue;
+    }
     const found = req.paths.find((p) => existsSync(join(root, p)));
     if (!found) {
       out.push({
@@ -569,16 +589,26 @@ function checkRequiredFiles(root) {
  */
 export function conform(root) {
   const files = walk(root);
+
+  // The Suite is the auth broker: it issues the sessions the other apps
+  // verify, so the consumer-side auth checks do not apply to it. Declared in
+  // package.json as `striConform: { role: "broker" }` rather than guessed from
+  // the repo name, so the exemption is a deliberate, visible claim.
+  let role = "consumer";
+  try {
+    const declared = JSON.parse(read(join(root, "package.json")))?.striConform?.role;
+    if (APP_ROLES.includes(declared)) role = declared;
+  } catch { /* no package.json is reported by the file checks */ }
   const findings = [
     ...checkPurpose(root),
-    ...checkRequiredFiles(root),
+    ...checkRequiredFiles(root, role),
     ...checkFrontEnd(root, files),
-    ...checkMiddleware(root, files),
+    ...checkMiddleware(root, files, role),
     ...checkRouteAuthz(root, files),
     ...checkApiSurface(root, files),
     ...checkIdentity(root, files),
     ...checkKeyStorage(root, files),
-    ...checkDeploy(root),
+    ...checkDeploy(root, role),
     ...checkSecrets(root),
     ...checkBootMigrations(root, files),
     ...checkCeilings(root, files),
@@ -592,6 +622,7 @@ export function conform(root) {
   const failed = findings.filter((f) => f.status === "fail").length;
   return {
     app,
+    role,
     rulesVersion: RULES_VERSION,
     findings,
     failed,
@@ -604,7 +635,11 @@ export function conform(root) {
 const ICON = { pass: "  ok ", fail: "FAIL ", warn: "warn ", skip: "  -- " };
 
 export function format(r, { verbose = false } = {}) {
-  const lines = ["", `${r.app} — STRI app rules v${r.rulesVersion}`, "─".repeat(52)];
+  const lines = [
+    "",
+    `${r.app} — STRI app rules v${r.rulesVersion}` + (r.role === "broker" ? "  [auth broker]" : ""),
+    "─".repeat(52),
+  ];
   for (const f of r.findings) {
     // The useful output is what is wrong; --verbose shows the passes too.
     if (f.status === "pass" && !verbose) continue;
