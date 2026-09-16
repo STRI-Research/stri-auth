@@ -1,6 +1,6 @@
 {
   "name": "@stri/auth",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "STRI Suite auth for consuming apps (middleware gate, token callback, sign-out, getUser(), the app-to-app API key module) plus the STRI app rules and the stri-conform checker.",
   "type": "module",
   "exports": {

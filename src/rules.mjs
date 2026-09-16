@@ -288,7 +288,7 @@ export const REQUIRED_V1_ROUTES = [
  * correct check from a wrong one — that is a review, not a build step.
  */
 export const AUTHZ_IMPORT_PATTERN =
-  /from\s+["'][^"']*(auth|caller|actor|session|permission|role|guard)[^"']*["']/i;
+  /from\s+["'][^"']*(auth|caller|actor|session|permission|role|guard|gate)[^"']*["']/i;
 
 /**
  * A call that reads like a gate, wherever it was imported from.
@@ -296,10 +296,12 @@ export const AUTHZ_IMPORT_PATTERN =
  * Needed because the import path is often innocuous while the function is the
  * check: ART resolves its caller with `getSessionUser` from `@/lib/users`, and
  * authenticates Slack with `verifySlackRequest` from `@/lib/slack/verify`.
- * Matching only the path called both of those ungated.
+ * Matching only the path called both of those ungated. Token-URL routes (a
+ * phone scanning a QR) gate with `resolve…Token` — the Planner's
+ * `resolveMobileUploadToken` is the case that prompted it.
  */
 export const AUTHZ_IDENTIFIER_PATTERN =
-  /\b(get|require|assert|check|verify|ensure|is|has|can)[A-Z]\w*(User|Caller|Actor|Session|Auth|Authz|Role|Permission|Admin|Manager|Request|Workload|Signature|Secret)\w*\s*\(/;
+  /\b(get|require|assert|check|verify|ensure|resolve|is|has|can)[A-Z]\w*(User|Caller|Actor|Session|Auth|Authz|Role|Permission|Admin|Manager|Request|Workload|Signature|Secret|Token|Access)\w*\s*\(/;
 
 export const AUTHZ_MARKERS = [
   // Key-authenticated /api/v1 routes
