@@ -1,7 +1,7 @@
 {
   "name": "@stri/auth",
-  "version": "1.1.0",
-  "description": "STRI Suite auth for consuming apps: middleware gate, token callback, sign-out, getUser(), and the app-to-app API key module (mint, verify, admin handlers).",
+  "version": "1.2.0",
+  "description": "STRI Suite auth for consuming apps (middleware gate, token callback, sign-out, getUser(), the app-to-app API key module) plus the STRI app rules and the stri-conform checker.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -9,10 +9,16 @@
     "./callback": "./src/callback.ts",
     "./signout": "./src/signout.ts",
     "./api": "./src/api.ts",
-    "./api/admin": "./src/api-admin.ts"
+    "./api/admin": "./src/api-admin.ts",
+    "./rules": "./src/rules.mjs",
+    "./conform": "./src/conform.mjs",
+    "./eslint/authz-in-route-handlers.mjs": "./eslint/authz-in-route-handlers.mjs"
   },
   "files": [
-    "src"
+    "src",
+    "bin",
+    "eslint",
+    "RULES.md"
   ],
   "dependencies": {
     "jose": "^6"
@@ -25,12 +31,16 @@
     "url": "git+https://github.com/STRI-Research/stri-auth.git"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "conform": "node bin/stri-conform.mjs"
   },
   "devDependencies": {
     "vitest": "^3",
     "typescript": "^5",
     "@types/node": "^22",
     "next": "^15"
+  },
+  "bin": {
+    "stri-conform": "./bin/stri-conform.mjs"
   }
 }
