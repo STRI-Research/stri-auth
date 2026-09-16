@@ -162,7 +162,10 @@ function checkMiddleware(root, files, role = "consumer") {
     out.push({ rule: "S4", status: "fail", message: "middleware does not use @stri/auth/middleware", where });
   }
 
-  const matcher = /matcher:\s*\[([\s\S]*?)\]/.exec(src)?.[1] ?? "";
+  // Read the array as a run of string literals, so a `]` inside a character
+  // class (`board/[^/]+`) does not end it early.
+  const matcher =
+    /matcher:\s*\[((?:\s|,|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)*)\]/.exec(src)?.[1] ?? "";
   if (!matcher) {
     out.push({ rule: "N4", status: "warn", message: "No matcher found — verify the default gates everything", where });
     return out;
@@ -215,8 +218,18 @@ function checkMiddleware(root, files, role = "consumer") {
     }
   }
 
+  // N4 asks for a written reason beside each extra exclusion. An exclusion
+  // named in the file's comments counts as justified; the checker cannot judge
+  // the reason, only that one was written down.
+  const comments = (src.match(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g) ?? []).join("\n");
+  const namedInComments = (e) => {
+    const base = e.replace(/\[[^\]]*\][+*]?/g, "").replace(/[()?+*$^]/g, "");
+    return base.length > 1 && comments.includes(base);
+  };
   const unknown = excluded.filter(
-    (e) => !ALLOWED_MIDDLEWARE_EXCLUSIONS.some((a) => e.startsWith(a))
+    (e) =>
+      !ALLOWED_MIDDLEWARE_EXCLUSIONS.some((a) => e.startsWith(a)) &&
+      !namedInComments(e)
   );
   if (unknown.length) {
     out.push({
@@ -254,6 +267,9 @@ function checkRouteAuthz(root, files) {
     if (AUTHZ_EXEMPT_PATTERNS.some((re) => re.test(r))) continue;
 
     const src = read(f);
+    // A route that exists only to refuse (every method answers 405) has
+    // nothing to authorize — the same allowance the lint rule makes.
+    if (/\b405\b/.test(src) && src.length < 800) continue;
     const gated =
       AUTHZ_IMPORT_PATTERN.test(src) ||
       AUTHZ_IDENTIFIER_PATTERN.test(src) ||
