@@ -215,7 +215,7 @@ adding one is a change to this document, not to an app.
 
 ## Part 3 — The complexity ceiling
 
-Sam's framing: *the most complicated app should not get more complex than
+The standard: *the most complicated app should not get more complex than
 Machine Tracker.* Machine Tracker, measured:
 
 | | Machine Tracker |
