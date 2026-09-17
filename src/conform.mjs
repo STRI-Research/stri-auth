@@ -491,7 +491,15 @@ function checkSecrets(root) {
 function checkBootMigrations(root, files) {
   const hits = [];
   for (const f of files.filter((x) => /(instrumentation|layout|middleware)\.(ts|tsx|js)$/.test(x))) {
-    if (/\b(migrate\(|drizzle-kit|CREATE TABLE|ALTER TABLE)/i.test(read(f))) hits.push(rel(root, f));
+    const src = read(f);
+    // Also catch the statements living in another module and imported by the
+    // boot hook — ART's instrumentation imports '@/lib/db/migrateStatements'.
+    if (
+      /\b(migrate\(|drizzle-kit|CREATE TABLE|ALTER TABLE)/i.test(src) ||
+      /(import\(|from\s+)\s*["'][^"']*migrat[^"']*["']/i.test(src)
+    ) {
+      hits.push(rel(root, f));
+    }
   }
   return [
     hits.length

@@ -275,7 +275,7 @@ export const REQUIRED_V1_ROUTES = [
  *
  * A name list alone does not work. Every app spells its own authz differently
  * — Machine Tracker `getCaller`/`canManage`, the Planner `requireApiCaller` +
- * `has(caller, …)`, ART `getActor`, the SOP tool `getCurrentUser`,
+ * `has(caller, …)`, ART `getSessionUser`/`requireArtUser`, the SOP tool `getCurrentUser`,
  * `requireAppRole` and `checkIntegrationAuth` — and a checker that only knew
  * one spelling reported ~120 false failures across two apps on its first run.
  * A checker that cries wolf gets switched off, so this matches two ways:
@@ -319,7 +319,9 @@ export const AUTHZ_MARKERS = [
   "requireApiCaller",
   "getStriCaller",
   "getCurrentUser",
-  "getActor",
+  // Deliberately NOT getActor: in ART it is attribution, not authorization,
+  // and returns 'web' for nobody.
+  "requireArtUser",
   "requireActor",
   "requireAppRole",
   "canManage",
