@@ -79,7 +79,9 @@ const DEFAULT_CALLER_RESOLVERS = [
   "getCaller",
   "getCurrentUser",
   "getSessionUser",
-  "getActor",
+  // Not getActor: ART's getActor only names who to attribute a change to and
+  // falls back to 'web' when nobody is signed in. Counting it hid 41 ART
+  // write routes that never resolved a user at all.
   "requireActor",
   "requireWorkload",
 ];
