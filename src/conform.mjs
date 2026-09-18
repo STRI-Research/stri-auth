@@ -400,14 +400,32 @@ function checkApiSurface(root, files) {
   return out;
 }
 
+/** Windows gives back backslashes; every pattern here is written with slashes. */
+function posix(p) {
+  return p.split("\\").join("/");
+}
+
+/** The app's schema, whichever ORM it uses. Drizzle first, then Prisma. */
+function schemaFile(root, files) {
+  return (
+    files.find((f) => /db\/schema\.(ts|js)$/.test(posix(rel(root, f)))) ??
+    files.find((f) => /prisma\/schema\.prisma$/.test(posix(rel(root, f))))
+  );
+}
+
 /** N1 — identity keyed on the Suite account id. */
-function checkIdentity(root, files) {
-  const schema = files.find((f) => /db\/schema\.(ts|js)$/.test(rel(root, f)));
+function checkIdentity(root, files, role = "consumer") {
+  if (role === "broker") {
+    return [{ rule: "N1", status: "skip", message: "auth broker — it issues the account id other apps key on" }];
+  }
+  const schema = schemaFile(root, files);
   if (!schema) return [{ rule: "N1", status: "skip", message: "No db/schema found" }];
   const where = [rel(root, schema)];
   return [
-    /suite_?[uU]ser_?[iI]d/.test(read(schema))
-      ? { rule: "N1", status: "pass", message: "a person is keyed on suite_user_id", where }
+    // `external_id` is what a Prisma app calls the same thing: the Suite `sub`
+    // stamped on the local person row.
+    /suite_?[uU]ser_?[iI]d|external_?[iI]d/.test(read(schema))
+      ? { rule: "N1", status: "pass", message: "a person is keyed on the Suite account id", where }
       : {
           rule: "N1", status: "warn",
           message: "No suite_user_id column — if this app stores people, key them on the Suite account id, never email",
@@ -419,6 +437,26 @@ function checkIdentity(root, files) {
 /** N6 — the api_key table, with the columns the estate contract fixes. */
 function checkKeyStorage(root, files) {
   const needed = ["hash", "scopes", "environment", "revoked", "expires"];
+
+  // Prisma names it in PascalCase and there is no `pgTable` to match on, so
+  // look for the model rather than the table. `ApiKey`, `SuiteApiKey` — any
+  // model whose name ends that way, as long as it holds a hash and scopes.
+  const prisma = files.find((f) => /prisma\/schema\.prisma$/.test(posix(rel(root, f))));
+  if (prisma) {
+    const src = read(prisma);
+    for (const m of src.matchAll(/model\s+(\w*ApiKey)\s*\{([\s\S]*?)\n\}/g)) {
+      const body = m[2];
+      if (!/\bhash\b/i.test(body) || !/\bscopes\b/i.test(body)) continue;
+      const missing = needed.filter((c) => !new RegExp(c, "i").test(body));
+      const where = [rel(root, prisma)];
+      return [
+        missing.length
+          ? { rule: "N6", status: "warn", message: `${m[1]} missing column(s): ${missing.join(", ")}`, where }
+          : { rule: "N6", status: "pass", message: `${m[1]} has hash, scopes, environment, expiry and revocation`, where },
+      ];
+    }
+  }
+
   for (const f of files.filter((x) => /\.(ts|js|mjs|sql)$/.test(x))) {
     const src = read(f);
     if (!/pgTable\(\s*["']api_key["']|CREATE TABLE IF NOT EXISTS api_key/.test(src)) continue;
@@ -516,13 +554,15 @@ function checkBootMigrations(root, files) {
 function checkCeilings(root, files) {
   const out = [];
 
-  const schema = files.find((f) => /db\/schema\.(ts|js)$/.test(rel(root, f)));
+  const schema = schemaFile(root, files);
   let tables = 0;
   let source = null;
   if (schema) {
-    tables = (read(schema).match(/pgTable\(/g) ?? []).length;
+    const src = read(schema);
+    tables = (src.match(/pgTable\(/g) ?? []).length || (src.match(/^model\s+\w+\s*\{/gm) ?? []).length;
     source = rel(root, schema);
-  } else {
+  }
+  if (!tables) {
     // Raw-SQL apps create tables in code; count those instead.
     const seen = new Set();
     for (const f of files.filter((x) => /\.(ts|js|mjs|sql)$/.test(x))) {
@@ -630,7 +670,7 @@ export function conform(root) {
     ...checkMiddleware(root, files, role),
     ...checkRouteAuthz(root, files),
     ...checkApiSurface(root, files),
-    ...checkIdentity(root, files),
+    ...checkIdentity(root, files, role),
     ...checkKeyStorage(root, files),
     ...checkDeploy(root, role),
     ...checkSecrets(root),
