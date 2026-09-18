@@ -37,7 +37,14 @@ export interface StriUser {
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const key = await getPublicKey();
-    const { payload } = await jwtVerify(token, key);
+    const { payload } = await jwtVerify(token, key, {
+      // Pin the algorithm and require an expiry so a token minted without one
+      // can never verify forever. (`maxTokenAge` is intentionally omitted: it
+      // would require an `iat` claim and reject tokens that lack one — the
+      // cookie's own maxAge already bounds the session window.)
+      algorithms: ["EdDSA"],
+      requiredClaims: ["exp"],
+    });
     if (payload.app !== appName()) return null;
     return payload;
   } catch {
