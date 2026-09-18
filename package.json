@@ -1,7 +1,7 @@
 {
   "name": "@stri/auth",
-  "version": "1.2.3",
-  "description": "STRI Suite auth for consuming apps (middleware gate, token callback, sign-out, getUser(), the app-to-app API key module) plus the STRI app rules and the stri-conform checker.",
+  "version": "2.0.0",
+  "description": "STRI Suite auth for consuming apps (middleware gate, token callback, sign-out, getUser(), the app-to-app API key module, the user-permissions module) plus the STRI app rules and the stri-conform checker.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -10,7 +10,9 @@
     "./signout": "./src/signout.ts",
     "./api": "./src/api.ts",
     "./api/admin": "./src/api-admin.ts",
+    "./permissions": "./src/permissions.ts",
     "./rules": "./src/rules.mjs",
+    "./components": "./src/components.mjs",
     "./conform": "./src/conform.mjs",
     "./eslint/authz-in-route-handlers.mjs": "./eslint/authz-in-route-handlers.mjs"
   },
