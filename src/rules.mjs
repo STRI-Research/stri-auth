@@ -489,6 +489,11 @@ export const AUTHZ_MARKERS = [
   "gate(",
   "apiKeyHandlers",
   "createApiKeyHandlers",
+  // The permissions component's handlers: session-authenticated and admin-only
+  // inside the shared module, the same way the key handlers are.
+  "accessHandlers",
+  "createAccessHandlers",
+  "requireCapability",
   // Self-authenticating cron and integration secrets
   "CRON_SECRET",
   "INTEGRATION_API_SECRET",
