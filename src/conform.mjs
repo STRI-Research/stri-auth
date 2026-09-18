@@ -15,6 +15,17 @@
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import {
+  checkAudit,
+  checkBackground,
+  checkComponents,
+  checkGrantPage,
+  checkPermissionsTable,
+  checkStorage,
+  declaredComponents,
+  detectComponents,
+} from "./conform-components.mjs";
+import { MANUAL_RULES } from "./components.mjs";
 import { execFileSync } from "node:child_process";
 import { join, relative, sep } from "node:path";
 import {
@@ -663,6 +674,20 @@ export function conform(root) {
     const declared = JSON.parse(read(join(root, "package.json")))?.striConform?.role;
     if (APP_ROLES.includes(declared)) role = declared;
   } catch { /* no package.json is reported by the file checks */ }
+  // What the app says it is made of, and what it looks like it is made of.
+  // The second is not a formality: an undeclared component would otherwise be
+  // a way to opt out of that component's rules.
+  const declared = declaredComponents(root);
+  const source = files
+    .filter((f) => /\.(ts|tsx|js|jsx|mjs|sql|prisma|json)$/.test(f) && !/node_modules/.test(f))
+    .slice(0, 4000)
+    .map((f) => read(f))
+    .join("\n");
+  const detected = detectComponents(root, files, source);
+  const active = declared ?? detected;
+  const has = (c) => active.includes(c);
+  const schema = schemaFile(root, files);
+
   const findings = [
     ...checkPurpose(root),
     ...checkRequiredFiles(root, role),
@@ -676,6 +701,15 @@ export function conform(root) {
     ...checkSecrets(root),
     ...checkBootMigrations(root, files),
     ...checkCeilings(root, files),
+    ...checkComponents(root, declared, detected),
+    // Components added in rules 2.0. Warnings while the estate converts: a
+    // checker that is red everywhere is a checker nobody reads.
+    ...(has("permissions") && role !== "broker"
+      ? [...checkPermissionsTable(root, files, schema, source), ...checkGrantPage(root, files)]
+      : []),
+    ...(has("storage") ? checkStorage(root, files, schema, source) : []),
+    ...(has("background") ? checkBackground(root, files) : []),
+    ...(has("audit") ? checkAudit(root, files, schema) : []),
   ];
 
   let app = root.split(/[\\/]/).filter(Boolean).pop() ?? root;
@@ -687,6 +721,8 @@ export function conform(root) {
   return {
     app,
     role,
+    components: { declared, detected, active },
+    manualRules: MANUAL_RULES,
     rulesVersion: RULES_VERSION,
     findings,
     failed,

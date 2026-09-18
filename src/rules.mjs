@@ -9,13 +9,23 @@
  * Severity is the whole point of the split:
  *   - `must`   a conformance failure. Non-zero exit. Fix it or the app is
  *              outside the estate's rules.
- *   - `should` a tripwire. Reported, does not fail the run. Crossing one means
- *              justify it in PROJECT.md or split the app — a judgement for a
- *              person, not a build step.
+ *   - `should` a tripwire, or a rule still ramping in. Reported, does not fail
+ *              the run. Crossing one means justify it in PROJECT.md or split
+ *              the app — a judgement for a person, not a build step.
+ *
+ * Every rule also names the `component` it belongs to. An app declares its
+ * components in package.json (`striConform.components`); the checker enforces
+ * the declared ones and flags a component it can see but was not told about.
+ * That is what lets "not every app has object storage" coexist with "every app
+ * that has it does it the same way".
+ *
+ * Rules added in 2.0 carry `since: "2.0.0"` and severity `should`: they are
+ * warnings until each app converts. A checker that is red everywhere is a
+ * checker nobody reads.
  */
 
 
-export const RULES_VERSION = "1.0.0";
+export const RULES_VERSION = "2.0.0";
 
 /**
  * Each rule: `{ id, title, severity, because }`.
@@ -163,6 +173,176 @@ export const RULES = [
     because:
       "A nav with twelve entries is a description of twelve jobs, and S1 says an app has one.",
   },
+
+  // ── User permissions (2.0) ──────────────────────────────────────────────
+  {
+    id: "P1",
+    title: "Access is a row in this app's own table, keyed on the Suite account id",
+    severity: "should",
+    since: "2.0.0",
+    component: "permissions",
+    because:
+      "Five apps answer 'may this person do this?' five ways today and the differences are historical, not meaningful. One shape, one key: app_access(suite_user_id, role, granted_by, granted_at, revoked_at).",
+  },
+  {
+    id: "P2",
+    title: "The permissions table holds no name, email or avatar",
+    severity: "should",
+    since: "2.0.0",
+    component: "permissions",
+    because:
+      "Display identity is read from the Suite directory, never cached in a column. A name written back from a session token overwrote two people's email addresses in the Planner's production database.",
+  },
+  {
+    id: "P3",
+    title: "Authorization is checked in the route, from the app's own table",
+    severity: "must",
+    component: "permissions",
+    because:
+      "The middleware only authenticates. The Planner shipped ~25 ungated routes and ART 41 more. The role is read per request, so a demoted admin loses the page on their next request rather than at their next login.",
+  },
+  {
+    id: "P4",
+    title: "Access is granted by a person, from a page in the app",
+    severity: "should",
+    since: "2.0.0",
+    component: "permissions",
+    because:
+      "Not by editing the database, not by an env var, not by making whoever signs in first an admin. Machine Tracker's roles could only be changed with SQL until 18 Sep 2026, so its owner sat at 'field' for a month.",
+  },
+
+  // ── Object storage (2.0) ────────────────────────────────────────────────
+  {
+    id: "O1",
+    title: "Files are private, reached through a short-lived signed URL",
+    severity: "should",
+    since: "2.0.0",
+    component: "storage",
+    because:
+      "Machine Tracker's invoice and fault-photo URLs are public, and since its API shipped a scoped key also hands them out. The gate was on the record, not on the file.",
+  },
+  {
+    id: "O2",
+    title: "The database stores an object pathname, never a URL",
+    severity: "should",
+    since: "2.0.0",
+    component: "storage",
+    because:
+      "A URL in a column is a vendor migration that touches every row. ART's imagery tables store pathnames and moved to R2 with no data change; its evidence_file table stores URLs and cannot.",
+  },
+  {
+    id: "O3",
+    title: "One facade module names the vendor",
+    severity: "should",
+    since: "2.0.0",
+    component: "storage",
+    because:
+      "Reads fall back to the other store while a migration is in flight, which is what makes a store move a parallel run rather than a cutover.",
+  },
+  {
+    id: "O4",
+    title: "No directory indexing on any upload location",
+    severity: "should",
+    since: "2.0.0",
+    component: "storage",
+    because:
+      "STRIlive served an indexable directory of HR PDFs from behind a gated app.",
+  },
+
+  // ── Background work (2.0) ───────────────────────────────────────────────
+  {
+    id: "B1",
+    title: "Unattended work authenticates itself, fail-closed",
+    severity: "should",
+    since: "2.0.0",
+    component: "background",
+    because:
+      "Both Planner cron routes failed open on a missing CRON_SECRET until 17 Sep 2026: unset the variable and the endpoint was public.",
+  },
+  {
+    id: "B2",
+    title: "Unattended work is safe to run twice",
+    severity: "should",
+    since: "2.0.0",
+    component: "background",
+    because:
+      "Retries happen and schedules overlap. A job that double-sends is a job that will.",
+  },
+
+  // ── Audit (2.0) ─────────────────────────────────────────────────────────
+  {
+    id: "A1",
+    title: "One append-only audit log naming the person, the action and the app that carried it",
+    severity: "should",
+    since: "2.0.0",
+    component: "audit",
+    because:
+      "Four apps have four audit designs and two swallow write failures, which makes the log evidence of nothing. 'Sam, via the deploy skill' is the pair worth keeping.",
+  },
+
+  // ── Outbound comms (2.0) ────────────────────────────────────────────────
+  {
+    id: "M1",
+    title: "People are reached through the Suite alert channel, not a per-app mailer",
+    severity: "should",
+    since: "2.0.0",
+    component: "comms",
+    because:
+      "The Suite holds the accounts, the devices and the inbox. An app that mails people directly needs its own address list, which is a second directory going stale.",
+  },
+
+  // ── Model access (2.0) ──────────────────────────────────────────────────
+  {
+    id: "X1",
+    title: "No special-category data is sent to a model",
+    severity: "should",
+    since: "2.0.0",
+    component: "model",
+    because:
+      "Article 9 data — sickness, health — does not leave the app. Extraction is scoped to the fields it needs.",
+  },
+  {
+    id: "X2",
+    title: "The model proposes; a person decides",
+    severity: "should",
+    since: "2.0.0",
+    component: "model",
+    because:
+      "Output lands in a queue a human confirms, and the record says it was AI-assisted. The SOP tool's COSHH extraction is the pattern.",
+  },
+
+  // ── Secrets typing (2.0) ────────────────────────────────────────────────
+  {
+    id: "K1",
+    title: "A secret is typed as a secret on the platform",
+    severity: "should",
+    since: "2.0.0",
+    component: "secrets",
+    because:
+      "On Vercel, `sensitive` rather than `encrypted`: an encrypted value can be read back from the dashboard and the API, and Vercel's own scanner flags it. Eleven variables on the Planner are typed the readable way.",
+  },
+
+  // ── Retention (2.0) ─────────────────────────────────────────────────────
+  {
+    id: "R1",
+    title: "Personal data has a stated lifetime and a way to delete one person's",
+    severity: "should",
+    since: "2.0.0",
+    component: "retention",
+    because:
+      "A leaver's data sitting in nine apps with no stated lifetime is nine copies nobody can account for.",
+  },
+
+  // ── Design system (2.0) ─────────────────────────────────────────────────
+  {
+    id: "D1",
+    title: "The design system is consumed, never forked into the app",
+    severity: "should",
+    since: "2.0.0",
+    component: "front-end",
+    because:
+      "Shared material, per-app character through the theme layer. A component copied into an app is how apps stop looking related, one fix at a time.",
+  },
 ];
 
 export const RULE_BY_ID = Object.fromEntries(
@@ -309,6 +489,11 @@ export const AUTHZ_MARKERS = [
   "gate(",
   "apiKeyHandlers",
   "createApiKeyHandlers",
+  // The permissions component's handlers: session-authenticated and admin-only
+  // inside the shared module, the same way the key handlers are.
+  "accessHandlers",
+  "createAccessHandlers",
+  "requireCapability",
   // Self-authenticating cron and integration secrets
   "CRON_SECRET",
   "INTEGRATION_API_SECRET",
