@@ -110,14 +110,25 @@
 
   /* ── Type ──────────────────────────────────────────────────────────────
      Montserrat is the group-wide digital typeface. The app supplies the font
-     itself (next/font, or a stylesheet link) and this just names the stack, so
-     the package never blocks a render on a webfont it went and fetched.
+     itself, so the package never blocks a render on a webfont it went and
+     fetched — and the two ways of supplying it both land here:
+
+       next/font  sets `--font-montserrat` to its own hashed family name. That
+                  is why this indirects through a variable instead of naming
+                  "Montserrat" outright: next/font's family is NOT called
+                  "Montserrat", so a bare literal would silently miss it and
+                  the app would render in the fallback while looking wired up.
+       <link>     makes the real family "Montserrat" available, and the literal
+                  further down the chain picks it up. Weather loads it this way.
+
+     An app that loads neither still gets a sane system stack.
 
      House signature is lower case, but it is authored in the string — never
      `text-transform`, which would render the brand name as "stri". */
-  --stri-font: "Montserrat", ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif;
-  --stri-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --stri-font: var(--font-montserrat), "Montserrat", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, sans-serif;
+  --stri-font-mono: var(--font-mono-loaded), ui-monospace, SFMono-Regular,
+    "SF Mono", Menlo, monospace;
 
   /* ── Metrics ───────────────────────────────────────────────────────────
      One scale, so a card in one app is the same card in the next. 44px is the
