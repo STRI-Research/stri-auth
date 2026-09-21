@@ -138,8 +138,12 @@
   transition: background-color 120ms, color 120ms;
 }
 
+/* `currentColor` rather than a fixed white, so the same hover reads on a dark
+   header and on a light ground. Weather mounts the account menu straight onto
+   the page rather than into a bar, and a white-on-white hover is simply
+   invisible there. */
 .stri-nav-link:hover {
-  background: rgb(255 255 255 / 0.1);
+  background: color-mix(in srgb, currentColor 12%, transparent);
   color: var(--stri-on-header);
 }
 
@@ -225,7 +229,7 @@
 }
 
 .stri-account-trigger:hover {
-  background: rgb(255 255 255 / 0.1);
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .stri-avatar {
