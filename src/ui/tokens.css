@@ -1,0 +1,134 @@
+/**
+ * STRIUX tokens — the shared material every STRI app's interface is cut from.
+ *
+ * Plain custom properties, deliberately. Three of the five apps that adopt this
+ * first are Tailwind v4, one is hand-written CSS and one is inline styles on
+ * Next 14 — a Tailwind-only design system could only ever reach three of them.
+ * Tailwind apps layer `@stri/auth/ui/tailwind.css` on top, which maps these same
+ * variables onto `stri-*` utilities, so there is still one set of numbers.
+ *
+ * Import once, before the app's own stylesheet:
+ *
+ *   @import "@stri/auth/ui/tokens.css";
+ *
+ * ── The palette is closed ──────────────────────────────────────────────────
+ * The eleven Pantone colours below are the approved STRI kit, verbatim. Do not
+ * add a hue. If a component needs a step between two of them, derive it with
+ * `color-mix()` from an approved colour — that way a brand revision moves every
+ * derived value with it. The `#003840` teal and `#C4F04B` lime that several apps
+ * still carry are *not* brand colours; the planner's whole `stri-*` ramp is
+ * built on the former, which is why adopting this file is a visible change there
+ * rather than a no-op.
+ *
+ * ── Why the roles are assigned the way they are ────────────────────────────
+ * Measured contrast on the light ground (#f6f8f6), which is what decides whether
+ * a colour may carry text at all:
+ *
+ *   pale cyan 1.6:1 · yellow 1.4:1 · mint 1.7:1 · teal 2.3:1 · cyan 2.4:1
+ *   green 2.8:1 · blue 3.9:1 · deep green 5.4:1 · slate 6.0:1 · grey-11 7.1:1
+ *
+ * So the vivid end of the kit is for fills, chips and graphics, and text belongs
+ * to the dark end. That is exactly what the kit means by "subtle hints of colour
+ * on a full white background". It is written down here so nobody has to re-derive
+ * it, and so a reviewer can check a choice against a number rather than a taste.
+ */
+
+:root {
+  /* ── The approved kit ──────────────────────────────────────────────────── */
+  --stri-pms-3242: #71dcdf; /* pale cyan  */
+  --stri-pms-3262: #00bfb8; /* teal       */
+  --stri-pms-306: #00b6ed; /* cyan blue  */
+  --stri-pms-3005: #0084dd; /* blue       */
+  --stri-pms-7693: #4e6584; /* slate blue */
+  --stri-pms-396: #e2e200; /* yellow     */
+  --stri-pms-344: #8ed8b2; /* mint       */
+  --stri-pms-361: #43b12e; /* green      */
+  --stri-pms-356: #007b34; /* deep green */
+  --stri-cool-grey-6: #a7a8aa;
+  --stri-cool-grey-11: #545860;
+  --stri-ink: #2a2c30;
+
+  /* The kit's three groupings, in the order the logo device runs:
+     Earth (greens) → Water (cyan) → Sky (blue). Gradients follow that run so
+     the interface echoes the mark rather than inventing its own direction. */
+  --stri-earth: var(--stri-pms-361);
+  --stri-water: var(--stri-pms-306);
+  --stri-sky: var(--stri-pms-3005);
+
+  /* ── Ground ────────────────────────────────────────────────────────────
+     White is the brand's native context, so an STRI app sits on paper rather
+     than on ink. A hint of green keeps it off clinical white without tinting
+     the content. Apps pin a single light theme — no `prefers-color-scheme`
+     flip, which only ever looks broken on a utility tool that was never given
+     a real dark design. */
+  --stri-bg: #f6f8f6;
+  --stri-paper: #ffffff;
+  --stri-fg: var(--stri-ink);
+  --stri-muted: #eef2f0;
+  --stri-muted-fg: var(--stri-cool-grey-11);
+  --stri-border: #dfe6e2;
+  --stri-border-strong: #c7d2cb;
+  --stri-ring: color-mix(in srgb, var(--stri-accent) 45%, transparent);
+  --stri-shadow: 0 1px 2px rgb(42 44 48 / 0.06), 0 1px 3px rgb(42 44 48 / 0.1);
+  --stri-shadow-lg: 0 8px 24px rgb(42 44 48 / 0.12);
+
+  /* ── The theme layer ───────────────────────────────────────────────────
+     D1 in RULES.md: apps should not look identical, they should look related.
+     Everything above is fixed; these five are what an app overrides to take on
+     its own character, and they are the ONLY ones it should touch. Pick from
+     the kit — an accent that carries text needs ≥4.5:1 on the ground, which
+     limits `--stri-accent` to deep green, slate or grey-11.
+
+     Default is deep green: the estate's most common accent, 5.4:1, and the one
+     the reference app (Machine Tracker) already reads as.
+
+       --stri-accent        links, active nav text, focus rings
+       --stri-accent-solid  fills that carry white type
+       --stri-accent-fill   vivid graphics only — never text
+       --stri-accent-tint   pale wash for chips and hovers
+       --stri-header        the dark bar at the top of the shell */
+  --stri-accent: var(--stri-pms-356);
+  --stri-accent-solid: var(--stri-pms-356);
+  --stri-accent-fill: var(--stri-pms-361);
+  --stri-accent-tint: color-mix(in srgb, var(--stri-pms-361) 14%, #ffffff);
+  --stri-header: #10331f;
+  --stri-on-accent: #ffffff;
+  --stri-on-header: #ffffff;
+
+  /* ── Status ────────────────────────────────────────────────────────────
+     Status is not themed. A fault reads the same red in every app, because a
+     person who learns it in one tool should not have to relearn it in the next.
+     Each pairs a text-safe colour with a tint to sit it on. */
+  --stri-good: var(--stri-pms-356);
+  --stri-good-tint: #e6f4ec;
+  --stri-warn: #8a5a00;
+  --stri-warn-tint: #fdf4e3;
+  --stri-bad: #b3261e;
+  --stri-bad-tint: #fbeaea;
+  --stri-info: var(--stri-pms-7693);
+  --stri-info-tint: #eef1f6;
+
+  /* ── Type ──────────────────────────────────────────────────────────────
+     Montserrat is the group-wide digital typeface. The app supplies the font
+     itself (next/font, or a stylesheet link) and this just names the stack, so
+     the package never blocks a render on a webfont it went and fetched.
+
+     House signature is lower case, but it is authored in the string — never
+     `text-transform`, which would render the brand name as "stri". */
+  --stri-font: "Montserrat", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --stri-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* ── Metrics ───────────────────────────────────────────────────────────
+     One scale, so a card in one app is the same card in the next. 44px is the
+     minimum tap target — the field apps are used on a phone, outdoors, in
+     gloves, which is also why the bottom bar pads itself against the home
+     indicator rather than sitting flush. */
+  --stri-radius: 0.5rem;
+  --stri-radius-lg: 0.75rem;
+  --stri-tap: 44px;
+  --stri-header-h: 56px;
+  --stri-bar-h: 60px;
+  --stri-gutter: 1rem;
+  --stri-measure: 68ch;
+}

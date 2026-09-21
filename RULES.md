@@ -11,7 +11,7 @@ The reference implementation is **Machine Tracker**. When a rule is ambiguous,
 read that repo: 13 tables, 24 API routes, one domain, one sentence of purpose.
 It is the size an STRI app should be.
 
-Version: 2.0.0 — 18 September 2026. Canonical copy: `@stri/auth/RULES.md`.
+Version: 2.1.0 — 21 September 2026. Canonical copy: `@stri/auth/RULES.md`.
 Check an app with `npx stri-conform`.
 
 > **What changed in 2.0.** The rules are now organised by **component** rather
@@ -33,7 +33,7 @@ that has one does it the same way.**
 | # | Component | Every app? | Rules | Shared code |
 |---|---|---|---|---|
 | 1 | Purpose and shape | yes | S1 | — |
-| 2 | Front end | usually | S2, D1 | STRIUX design system |
+| 2 | Front end | usually | S2, D1 | `@stri/auth/ui` (STRIUX) |
 | 3 | Database | usually | S3, N8, N9 | — |
 | 4 | Sign-in | yes | S4a, N4, N5 | `@stri/auth/middleware` |
 | 5 | **User permissions** | when people differ | **P1–P4** | `@stri/auth/permissions` |
@@ -134,6 +134,39 @@ else in the estate has one to copy from.
 Shared material, per-app character through the theme layer. Apps should not look
 identical — they should look related. Copying a component into an app and
 editing it there is how they stop being related, one fix at a time.
+
+The system is **`@stri/auth/ui`**. Tokens are plain custom properties rather than
+a Tailwind theme, because the estate is not all Tailwind — three of the five apps
+that adopted it first are Tailwind v4, one is hand-written CSS and one is inline
+styles on Next 14, and a Tailwind-only system could only have reached three of
+them. Tailwind apps add the bridge and keep their `stri-*` utilities:
+
+```css
+@import "tailwindcss";
+@import "@stri/auth/ui/tokens.css";
+@import "@stri/auth/ui/ui.css";
+@import "@stri/auth/ui/tailwind.css";   /* Tailwind apps only */
+```
+
+```tsx
+import { AppShell, AccountMenu, type Destination } from "@stri/auth/ui";
+```
+
+**The theme layer is five variables**, and they are the only ones an app should
+set: `--stri-accent`, `--stri-accent-solid`, `--stri-accent-fill`,
+`--stri-accent-tint`, `--stri-header`. Everything else — the ground, the border,
+the status colours, the metrics — is shared, and status especially is *not*
+themed: a fault reads the same red in every app, because someone who learns it
+in one tool should not have to relearn it in the next.
+
+The palette is closed. The eleven approved Pantone colours are in `tokens.css`;
+derive steps with `color-mix()` rather than adding a hue. The `#003840` teal and
+`#C4F04B` lime several apps still carry are **not** brand colours.
+
+What the checker looks for: an import of `@stri/auth/ui`, and the absence of a
+private `--color-stri-*` ramp. The second is the one that bites — two apps can
+both define `bg-stri-900` against different colours, so the markup looks portable
+and is not.
 
 ---
 

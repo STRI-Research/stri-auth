@@ -1,0 +1,473 @@
+/**
+ * STRIUX components — the shell every STRI app wears.
+ *
+ * Built only on the variables in `tokens.css`, with no Tailwind and no
+ * preprocessor, so the same stylesheet serves a Tailwind v4 app, a hand-written
+ * CSS app and an inline-styles app on Next 14 without any of them changing
+ * build setup to adopt it.
+ *
+ *   @import "@stri/auth/ui/tokens.css";
+ *   @import "@stri/auth/ui/ui.css";
+ *
+ * Every class is prefixed `stri-`. Nothing here styles a bare element selector
+ * beyond the small reset below, because these land in apps that already have
+ * their own opinions about `button` and `a` and the package has no business
+ * winning those arguments.
+ *
+ * Fork nothing (D1). If a component is close but not right, the fix is a token
+ * override in the app's theme layer, or a change here that every app gets —
+ * copying this file into an app is how the estate stops looking related.
+ */
+
+/* ── Shell ────────────────────────────────────────────────────────────────
+   Column layout, header pinned, content scrolls. `min-height: 100dvh` rather
+   than `100vh` because on iOS Safari the address bar makes `vh` taller than the
+   visible area, which put the bottom bar under the fold on every phone. */
+.stri-shell {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background: var(--stri-bg);
+  color: var(--stri-fg);
+  font-family: var(--stri-font);
+}
+
+.stri-shell-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: var(--stri-gutter);
+  /* Clear the phone bottom bar plus the iOS home indicator. Harmless on
+     desktop, where the bar is not rendered. */
+  padding-bottom: calc(
+    var(--stri-bar-h) + env(safe-area-inset-bottom, 0px) + var(--stri-gutter)
+  );
+}
+
+@media (min-width: 640px) {
+  .stri-shell-main {
+    padding: 1.5rem;
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+.stri-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: var(--stri-header-h);
+  padding-inline: var(--stri-gutter);
+  background: var(--stri-header);
+  color: var(--stri-on-header);
+}
+
+.stri-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+
+/* The app's name. Authored lower case in the string where the house signature
+   calls for it — never `text-transform`. */
+.stri-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: inherit;
+  text-decoration: none;
+}
+
+.stri-header-brand img {
+  height: 20px;
+  width: auto;
+}
+
+.stri-header-nav {
+  display: none;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .stri-header-nav {
+    display: block;
+  }
+}
+
+.stri-header-end {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Desktop nav ──────────────────────────────────────────────────────── */
+.stri-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stri-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.stri-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+  border-radius: var(--stri-radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--stri-on-header) 78%, transparent);
+  text-decoration: none;
+  transition: background-color 120ms, color 120ms;
+}
+
+.stri-nav-link:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: var(--stri-on-header);
+}
+
+.stri-nav-link.is-active {
+  background: var(--stri-paper);
+  color: var(--stri-header);
+  box-shadow: var(--stri-shadow);
+}
+
+/* ── Bottom bar (phone) ───────────────────────────────────────────────────
+   Hidden from 640px up, where the header nav takes over. Anything the bar
+   cannot reach belongs on a More page — see `projectNav` in nav.ts, which
+   guarantees no destination is unreachable on a phone. */
+.stri-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  min-height: var(--stri-bar-h);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--stri-paper);
+  border-top: 1px solid var(--stri-border);
+}
+
+@media (min-width: 640px) {
+  .stri-bar {
+    display: none;
+  }
+}
+
+.stri-bar-link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: var(--stri-tap);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.375rem 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--stri-muted-fg);
+  text-decoration: none;
+}
+
+.stri-bar-link.is-active {
+  color: var(--stri-accent);
+}
+
+.stri-bar-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Account menu ─────────────────────────────────────────────────────────
+   Top-right on every app. API access lives in here rather than in the main nav
+   — it is a per-account concern, not a place in the app, and putting it in the
+   nav gave every user a door that only an admin could open. */
+.stri-account {
+  position: relative;
+  flex: none;
+}
+
+.stri-account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--stri-tap);
+  border: 0;
+  border-radius: var(--stri-radius);
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.stri-account-trigger:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.stri-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--stri-accent-fill);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.stri-account-name {
+  display: none;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .stri-account-name {
+    display: block;
+  }
+}
+
+.stri-account-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 50;
+  min-width: 15rem;
+  overflow: hidden;
+  border: 1px solid var(--stri-border);
+  border-radius: var(--stri-radius);
+  background: var(--stri-paper);
+  color: var(--stri-fg);
+  box-shadow: var(--stri-shadow-lg);
+}
+
+.stri-account-head {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--stri-border);
+}
+
+.stri-account-head strong {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stri-account-head span {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  color: var(--stri-muted-fg);
+  overflow-wrap: anywhere;
+}
+
+.stri-account-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: var(--stri-tap);
+  border: 0;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stri-account-item:hover {
+  background: var(--stri-muted);
+}
+
+.stri-account-sep {
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--stri-border);
+}
+
+/* ── Primitives ───────────────────────────────────────────────────────────
+   The handful that every app had written for itself, and had written slightly
+   differently. Not a component library — anything domain-shaped stays in the
+   app that owns the domain. */
+.stri-card {
+  border: 1px solid var(--stri-border);
+  border-radius: var(--stri-radius-lg);
+  background: var(--stri-paper);
+  padding: 1rem;
+  box-shadow: var(--stri-shadow);
+}
+
+.stri-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--stri-tap);
+  border: 1px solid transparent;
+  border-radius: var(--stri-radius);
+  padding: 0.5rem 1rem;
+  background: var(--stri-accent-solid);
+  color: var(--stri-on-accent);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stri-btn:hover {
+  background: color-mix(in srgb, var(--stri-accent-solid) 85%, #000000);
+}
+
+.stri-btn[disabled],
+.stri-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stri-btn-quiet {
+  background: var(--stri-paper);
+  border-color: var(--stri-border-strong);
+  color: var(--stri-fg);
+}
+
+.stri-btn-quiet:hover {
+  background: var(--stri-muted);
+}
+
+/* Focus is never removed, only restyled — these apps are used one-handed on a
+   phone and with a keyboard on a desktop, and the second group is the one that
+   silently loses if the ring goes. */
+.stri-nav-link:focus-visible,
+.stri-bar-link:focus-visible,
+.stri-account-trigger:focus-visible,
+.stri-account-item:focus-visible,
+.stri-btn:focus-visible {
+  outline: 2px solid var(--stri-accent);
+  outline-offset: 2px;
+}
+
+.stri-header :is(.stri-nav-link, .stri-account-trigger):focus-visible {
+  outline-color: var(--stri-on-header);
+}
+
+.stri-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  background: var(--stri-muted);
+  color: var(--stri-muted-fg);
+}
+
+.stri-chip-good {
+  background: var(--stri-good-tint);
+  color: var(--stri-good);
+}
+.stri-chip-warn {
+  background: var(--stri-warn-tint);
+  color: var(--stri-warn);
+}
+.stri-chip-bad {
+  background: var(--stri-bad-tint);
+  color: var(--stri-bad);
+}
+.stri-chip-info {
+  background: var(--stri-info-tint);
+  color: var(--stri-info);
+}
+
+/* The count that rides on a nav item. Red on the dark header, inverted when the
+   item is active and the ground has gone white underneath it. */
+.stri-badge {
+  border-radius: 999px;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--stri-bad);
+  color: #ffffff;
+}
+
+.is-active > .stri-badge {
+  background: var(--stri-bad-tint);
+  color: var(--stri-bad);
+}
+
+/* Empty states say what to do, so they get a shape rather than a bare sentence. */
+.stri-empty {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--stri-muted-fg);
+}
+
+.stri-empty strong {
+  color: var(--stri-fg);
+  font-size: 0.9375rem;
+}
+
+/* Tabular numerals wherever figures line up in a column — a reading, a total, a
+   date. Applied by the app to its own tables. */
+.stri-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Visible to a screen reader, not on screen. The badge count reads as a bare
+   number otherwise, and "3" alone tells a screen-reader user nothing about
+   what three of. */
+.stri-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stri-nav-link {
+    transition: none;
+  }
+}

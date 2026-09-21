@@ -1,7 +1,7 @@
 {
   "name": "@stri/auth",
-  "version": "2.0.0",
-  "description": "STRI Suite auth for consuming apps (middleware gate, token callback, sign-out, getUser(), the app-to-app API key module, the user-permissions module) plus the STRI app rules and the stri-conform checker.",
+  "version": "2.1.0",
+  "description": "STRI Suite auth for consuming apps (middleware gate, token callback, sign-out, getUser(), the app-to-app API key module, the user-permissions module), the STRIUX design system, plus the STRI app rules and the stri-conform checker.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -14,6 +14,11 @@
     "./rules": "./src/rules.mjs",
     "./components": "./src/components.mjs",
     "./conform": "./src/conform.mjs",
+    "./ui": "./src/ui/index.ts",
+    "./ui/nav": "./src/ui/nav.ts",
+    "./ui/tokens.css": "./src/ui/tokens.css",
+    "./ui/ui.css": "./src/ui/ui.css",
+    "./ui/tailwind.css": "./src/ui/tailwind.css",
     "./eslint/authz-in-route-handlers.mjs": "./eslint/authz-in-route-handlers.mjs"
   },
   "files": [
@@ -26,7 +31,13 @@
     "jose": "^6"
   },
   "peerDependencies": {
-    "next": ">=14"
+    "next": ">=14",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",
@@ -37,10 +48,12 @@
     "conform": "node bin/stri-conform.mjs"
   },
   "devDependencies": {
-    "vitest": "^3",
-    "typescript": "^5",
     "@types/node": "^22",
-    "next": "^15"
+    "@types/react": "^19.3.0",
+    "next": "^15",
+    "react": "^19.3.0",
+    "typescript": "^5",
+    "vitest": "^3"
   },
   "bin": {
     "stri-conform": "./bin/stri-conform.mjs"

@@ -1,0 +1,56 @@
+/**
+ * Tailwind v4 bridge for the STRIUX tokens.
+ *
+ * Three of the five apps adopting this are Tailwind v4 and are already written
+ * against `stri-*` utilities — `bg-stri-900`, `text-stri-100`. This maps those
+ * utility names onto the shared tokens so those apps keep their existing markup
+ * and still get one set of numbers. Without it they would each keep a private
+ * `@theme` block, which is exactly the drift D1 is about.
+ *
+ *   @import "tailwindcss";
+ *   @import "@stri/auth/ui/tokens.css";
+ *   @import "@stri/auth/ui/tailwind.css";
+ *
+ * The ramp is derived from the app's own accent with `color-mix()`, so an app
+ * that re-themes by setting `--stri-accent-*` moves its whole Tailwind ramp
+ * with it and there is nothing to keep in step by hand.
+ *
+ * Steps carry the same contract as Machine Tracker's original ramp, which is
+ * where the numbers came from: 50–100 are fills and badge grounds, 200–300 are
+ * borders, 400–500 are graphics and must never carry white text, and white-text
+ * duties start at 600.
+ */
+
+@theme inline {
+  --color-stri-50: color-mix(in srgb, var(--stri-accent-fill) 6%, #ffffff);
+  --color-stri-100: color-mix(in srgb, var(--stri-accent-fill) 14%, #ffffff);
+  --color-stri-200: color-mix(in srgb, var(--stri-accent-fill) 30%, #ffffff);
+  --color-stri-300: color-mix(in srgb, var(--stri-accent-fill) 50%, #ffffff);
+  --color-stri-400: color-mix(in srgb, var(--stri-accent-fill) 75%, #ffffff);
+  --color-stri-500: var(--stri-accent-fill);
+  --color-stri-600: var(--stri-accent-solid);
+  --color-stri-700: color-mix(in srgb, var(--stri-accent-solid) 85%, #000000);
+  --color-stri-800: color-mix(in srgb, var(--stri-header) 55%, var(--stri-accent-solid));
+  --color-stri-900: var(--stri-header);
+
+  /* Ground and type, so `bg-background` and `text-foreground` resolve to the
+     shared values rather than each app's own guess at off-white. */
+  --color-background: var(--stri-bg);
+  --color-foreground: var(--stri-fg);
+  --color-paper: var(--stri-paper);
+  --color-muted: var(--stri-muted);
+  --color-muted-foreground: var(--stri-muted-fg);
+  --color-border: var(--stri-border);
+
+  /* Status, unthemed on purpose — a fault is the same red in every app. */
+  --color-good: var(--stri-good);
+  --color-warn: var(--stri-warn);
+  --color-bad: var(--stri-bad);
+  --color-info: var(--stri-info);
+
+  --font-sans: var(--stri-font);
+  --font-mono: var(--stri-font-mono);
+
+  --radius-stri: var(--stri-radius);
+  --radius-stri-lg: var(--stri-radius-lg);
+}
