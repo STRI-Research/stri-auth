@@ -41,7 +41,11 @@ function isDataRequest(request: NextRequest): boolean {
  * `defaultConfig`.
  */
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/auth")) {
+  // Anchor to a path boundary: exempt `/api/auth` and `/api/auth/...` only.
+  // A bare `startsWith("/api/auth")` also matches app routes like
+  // `/api/authors` or `/api/authorize`, leaving them completely unauthenticated.
+  const { pathname } = request.nextUrl;
+  if (pathname === "/api/auth" || pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 
@@ -63,6 +67,6 @@ export async function middleware(request: NextRequest) {
 
 export const defaultConfig = {
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api/auth/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
