@@ -34,10 +34,17 @@ export interface StriUser {
  * Returns the payload on success, or null on any failure (bad signature,
  * expiry, or wrong `app` claim). Never throws.
  */
+/**
+ * Every Suite token is EdDSA-signed with a one-hour `exp` (Suite
+ * stri-signing.ts). Pin the algorithm so no other is ever accepted, and
+ * require `exp` so a token minted without one can never verify forever.
+ */
+const VERIFY_OPTIONS = { algorithms: ["EdDSA"], requiredClaims: ["exp"] };
+
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const key = await getPublicKey();
-    const { payload } = await jwtVerify(token, key);
+    const { payload } = await jwtVerify(token, key, VERIFY_OPTIONS);
     if (payload.app !== appName()) return null;
     return payload;
   } catch {
@@ -75,7 +82,7 @@ export const config = {
 export async function verifyActorToken(token: string): Promise<JWTPayload | null> {
   try {
     const key = await getPublicKey();
-    const { payload } = await jwtVerify(token, key);
+    const { payload } = await jwtVerify(token, key, VERIFY_OPTIONS);
     if (typeof payload.sub !== "string" || !payload.sub) return null;
     return payload;
   } catch {
