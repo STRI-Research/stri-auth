@@ -43,7 +43,7 @@ your own `config` instead of re-exporting `defaultConfig`:
 export { middleware } from "@stri/auth/middleware";
 export const config = {
   matcher: [
-    "/((?!api/auth|m/|api/cron|_next|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api/auth/|m/|api/cron|_next|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
 ```

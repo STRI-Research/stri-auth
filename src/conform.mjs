@@ -130,12 +130,24 @@ function checkPurpose(root) {
 
 /** S2 — one front end, Next.js App Router. */
 function checkFrontEnd(root, files) {
-  const hasApp = files.some((f) => /(^|\/)app\/.*page\.(tsx|jsx)$/.test(rel(root, f)));
+  // `.js` counts. It was left out originally and Weather — a Pages Router app
+  // written entirely in plain JavaScript — reported "App Router only" for
+  // months, because not one of its pages ended in .tsx or .jsx. A rule that
+  // only sees TypeScript apps cannot tell you the estate is homogeneous.
+  const hasApp = files.some((f) => /(^|\/)app\/.*page\.(tsx|jsx|js)$/.test(rel(root, f)));
+  // `(^|\/)` on both, because `rel()` returns a repo-relative path with no
+  // leading slash — so a `\/pages\/api\/` exclusion never fired for an app with
+  // `pages/` at the root, and its API routes were counted as screens.
+  const isPagesApi = (r) => /(^|\/)pages\/api\//.test(r);
   const pagesRoutes = files.filter((f) => {
     const r = rel(root, f);
-    return /(^|\/)pages\//.test(r) && !/\/pages\/api\//.test(r) && /\.(tsx|jsx)$/.test(r);
+    return (
+      /(^|\/)pages\//.test(r) &&
+      !isPagesApi(r) &&
+      /\.(tsx|jsx|js)$/.test(r)
+    );
   });
-  const pagesApi = files.filter((f) => /\/pages\/api\//.test(rel(root, f)));
+  const pagesApi = files.filter((f) => isPagesApi(rel(root, f)));
 
   if (!hasApp && pagesRoutes.length) {
     return [{
@@ -151,6 +163,72 @@ function checkFrontEnd(root, files) {
     }];
   }
   return [{ rule: "S2", status: "pass", message: "App Router only" }];
+}
+
+/**
+ * D1 — the design system is consumed, never forked.
+ *
+ * Two things stop apps looking related, and this looks for both:
+ *
+ *   1. Not consuming it at all. An app with a front end should import the
+ *      STRIUX tokens; everything else in the shell follows from them.
+ *   2. Consuming it and then keeping a private copy of the numbers beside it.
+ *      A local `--color-stri-<step>` ramp is the specific shape that went
+ *      wrong here — the planner's ramp and Machine Tracker's ramp use the same
+ *      utility names for different colours, so `bg-stri-900` means one thing in
+ *      one app and another in the next. That is worse than no sharing, because
+ *      the markup looks portable and is not.
+ *
+ * A `should`, so it warns rather than failing: an app converts its shell in one
+ * change and its private ramp in another, and the checker has to stay usable in
+ * between.
+ */
+function checkDesignSystem(root, files) {
+  const styleish = files.filter((f) =>
+    /\.(css|ts|tsx|js|jsx|mjs)$/.test(rel(root, f))
+  );
+
+  const consumers = styleish.filter((f) => /@stri\/auth\/ui/.test(read(f)));
+
+  // A private ramp: `--color-stri-500: #...` declared in the app itself. The
+  // shared bridge declares the same names, so only count files that are not
+  // consuming it.
+  const privateRamps = styleish.filter((f) => {
+    const body = read(f);
+    return (
+      /--color-stri-\d{2,3}\s*:/.test(body) && !/@stri\/auth\/ui/.test(body)
+    );
+  });
+
+  const out = [];
+
+  if (consumers.length === 0) {
+    out.push({
+      rule: "D1",
+      status: "warn",
+      message:
+        "The design system is not consumed — no import of @stri/auth/ui. The shell, nav and account menu are this app's own.",
+    });
+  }
+
+  if (privateRamps.length > 0) {
+    out.push({
+      rule: "D1",
+      status: "warn",
+      message: `${privateRamps.length} file(s) declare a private --color-stri-* ramp — the same utility names as every other app, with different colours behind them`,
+      where: privateRamps.slice(0, 6).map((f) => rel(root, f)),
+    });
+  }
+
+  if (out.length === 0) {
+    out.push({
+      rule: "D1",
+      status: "pass",
+      message: `Design system consumed in ${consumers.length} file(s), no private ramp`,
+    });
+  }
+
+  return out;
 }
 
 /** S4 + N4 — middleware wired, and its exclusions a justified closed set. */
@@ -692,6 +770,7 @@ export function conform(root) {
     ...checkPurpose(root),
     ...checkRequiredFiles(root, role),
     ...checkFrontEnd(root, files),
+    ...(has("front-end") ? checkDesignSystem(root, files) : []),
     ...checkMiddleware(root, files, role),
     ...checkRouteAuthz(root, files),
     ...checkApiSurface(root, files),
